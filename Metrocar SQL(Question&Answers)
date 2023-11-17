@@ -1,0 +1,179 @@
+----total ride requested and canceled 
+WITH user_ride_status AS (
+    SELECT
+        user_id,
+        MAX(
+            CASE
+                WHEN dropoff_ts IS NULL
+                THEN 1
+                ELSE 0
+            END
+        ) AS ride_canceled
+    FROM ride_requests
+    GROUP BY user_id
+)
+SELECT
+    COUNT(*) AS total_users_ride_requested,
+    SUM(ride_canceled) AS total_users_ride_canceled
+FROM user_ride_status;
+
+
+--1 total ride requested 
+SELECT COUNT(*) AS total_rides
+FROM ride_requests;
+
+
+--1 How many times was the app downloaded?
+SELECT COUNT(DISTINCT app_download_key)
+FROM app_downloads;
+
+-- 2 How many users signed up on the app?
+SELECT COUNT(DISTINCT user_id)
+FROM signups;
+
+-- 3 How many rides were requested through the app?
+SELECT COUNT(DISTINCT ride_id) AS Total_ride_request
+FROM ride_requests;
+
+-- 4 How many rides were requested and completed through the app?
+SELECT
+    COUNT(DISTINCT ride_id) AS Total_ride_request ,
+    COUNT(
+        CASE
+            WHEN dropoff_ts IS NOT NULL AND accept_ts IS NOT NULL AND pickup_ts IS NOT NULL
+            THEN ride_id
+        END
+    ) AS completed_rides
+FROM ride_requests;
+
+select count(distinct ride_id)
+from ride_requests
+where cancel_ts is null;
+
+
+SELECT COUNT(DISTINCT ride_id)
+FROM transactions
+WHERE charge_status = 'Approved';
+
+
+
+-- 5 How many rides were requested and how many unique users requested a ride?
+SELECT
+    COUNT(DISTINCT user_id) AS Total_user_request,
+    COUNT(DISTINCT ride_id) AS total_rides
+FROM ride_requests;
+
+-- 6 What is the average time of a ride from pick up to drop off? 
+
+SELECT *,dropoff_ts - pickup_ts AS time_taken
+FROM ride_requests;
+
+SELECT AVG(dropoff_ts - pickup_ts) AS avg_time_taken
+FROM ride_requests;
+
+-- 7 How many rides were accepted by a driver?
+SELECT COUNT(accept_ts) AS accepted_rides
+FROM ride_requests;
+
+
+SELECT COUNT (DISTINCT ride_id)
+FROM ride_requests
+WHERE accept_ts IS NOT NULL;
+
+
+-- 8 How many rides did we successfully collect payments and how much was collected
+SELECT
+    SUM(purchase_amount_usd) AS total_amount,
+    COUNT(DISTINCT transaction_id) AS total_transaction
+FROM transactions
+WHERE charge_status = 'Approved' AND purchase_amount_usd IS NOT NULL;
+
+
+-- 9 How many ride requests happened on each platform?
+SELECT platform, COUNT(*) AS totaL_platform_rides
+FROM app_downloads
+GROUP BY platform;
+
+
+SELECT a.platform,b.user_id
+FROM app_downloads AS a
+INNER JOIN signups AS b 
+ON a.app_download_key = b.session_id;
+
+SELECT p.*,c.ride_id
+FROM 
+(SELECT a.platform,b.user_id
+FROM app_downloads AS a
+INNER JOIN signups AS b 
+ON a.app_download_key = b.session_id) AS P
+INNER JOIN ride_requests AS C
+ON P.user_id = C.user_id;
+
+
+
+SELECT platform, COUNT(DISTINCT ride_id)
+FROM 
+(SELECT p.*,c.ride_id
+FROM 
+(SELECT a.platform,b.user_id
+FROM app_downloads AS a
+INNER JOIN signups AS b 
+ON a.app_download_key = b.session_id) AS P
+INNER JOIN ride_requests AS C
+ON P.user_id = C.user_id) AS T
+GROUP BY platform;
+
+
+
+SELECT *
+FROM app_downloads;
+--10 What is the drop-off from users signing up to users requesting a ride?
+WITH user_ride_status  AS (
+  SELECT user_id
+  FROM ride_requests
+  GROUP BY user_id
+)
+SELECT 
+COUNT (*) AS total_signup,
+COUNT(DISTINCT user_ride_status.user_id) AS total_user_ride
+FROM signups s
+FULL JOIN user_ride_status 
+ON s.user_id = user_ride_status.user_id;
+
+SELECT COUNT(DISTINCT user_id)
+FROM signups; 
+
+SELECT COUNT(DISTINCT user_id)
+FROM ride_requests;
+
+SELECT *
+FROM ride_requests;
+
+--What is the drop-off from users signing up to users requesting a ride?
+SELECT COUNT(DISTINCT a.user_id),COUNT(DISTINCT b.user_id)
+FROM ride_requests AS a
+RIGHT JOIN signups AS b
+ON a.user_id = b.user_id;
+
+
+
+--extra 
+-- what is the total transaction of paymnet that was declined 
+SELECT
+    COUNT(*) AS successful_payments_count,
+    SUM(purchase_amount_usd) AS total_amount_collected,
+    COUNT(ride_id)
+    
+FROM transactions
+WHERE charge_status = 'Declined';
+
+
+
+
+
+
+
+
+
+
+
